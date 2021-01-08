@@ -74,13 +74,49 @@ def bio_to_json(string, tags):
 
 tokenizer = OurTokenizer(token_dict)
 
-sentence = "“看得我热泪盈眶，现场太震撼了。” 2021年1月1日，24岁的香港青年阿毛在天安门广场观看了新年第一次升旗仪式。为了实现这个愿望，他骑着山地自行车从广东出发，风雪兼程，于2020年12月31日下午赶到北京。"
-token_ids, segment_is = tokenizer.encode(sentence, max_len=MAX_SEQ_LEN)
-tensor = {"instances": [{"input_1": token_ids, "input_2": segment_is}]}
+import time
+from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED
+start_time = time.time()
+test_num = 100
+batch_size = 10
+# 测试HTTP响应时间
+# for i in range(test_num//batch_size):
+#     tensor = {"instances": []}
+#     for i in range(batch_size):
+#         sentence = "“看得我热泪盈眶，现场太震撼了。” 2021年1月1日，24岁的香港青年阿毛在天安门广场观看了新年第一次升旗仪式。为了实现这个愿望，他骑着山地自行车从广东出发，风雪兼程，于2020年12月31日下午赶到北京。"
+#         token_ids, segment_is = tokenizer.encode(sentence, max_len=MAX_SEQ_LEN)
+#         tensor["instances"].append({"input_1": token_ids, "input_2": segment_is})
+#
+#     url = "http://192.168.1.193:8561/v1/models/example_ner:predict"
+#     req = requests.post(url, json=tensor)
+#     if req.status_code == 200:
+#         for j in range(len(req.json()['predictions'])):
+#             t = np.asarray(req.json()['predictions'][j]).argmax(axis=1)
+#             tags = [id_label_dict[_] for _ in t]
+#             print(j, bio_to_json(sentence, tags[1:-1]))
 
-url = "http://192.168.1.193:8561/v1/models/example_ner:predict"
-req = requests.post(url, json=tensor)
-if req.status_code == 200:
-    t = np.asarray(req.json()['predictions'][0]).argmax(axis=1)
-    tags = [id_label_dict[_] for _ in t]
-    pprint(bio_to_json(sentence, tags[1:-1]))
+
+def get_predict(i, sentence_list):
+    tensor = {"instances": []}
+    for sentence in sentence_list:
+        token_ids, segment_is = tokenizer.encode(sentence, max_len=MAX_SEQ_LEN)
+        tensor["instances"].append({"input_1": token_ids, "input_2": segment_is})
+
+    url = "http://192.168.1.193:8561/v1/models/example_ner:predict"
+    req = requests.post(url, json=tensor)
+    if req.status_code == 200:
+        for j in range(len(req.json()['predictions'])):
+            t = np.asarray(req.json()['predictions'][j]).argmax(axis=1)
+            tags = [id_label_dict[_] for _ in t]
+            print("predict {} sample, batch no {}, result: {}".format(i, j, bio_to_json(sentence_list[j], tags[1:-1])))
+
+sentence_list = ["“看得我热泪盈眶，现场太震撼了。” 2021年1月1日，24岁的香港青年阿毛在天安门广场观看了新年第一次升旗仪式。为了实现这个愿望，他骑着山地自行车从广东出发，风雪兼程，于2020年12月31日下午赶到北京。"]*batch_size
+# 利用多线程调用接口
+executor = ThreadPoolExecutor(max_workers=10)  # 可以自己调整max_workers,即线程的个数
+# submit()的参数： 第一个为函数， 之后为该函数的传入参数，允许有多个
+future_tasks = [executor.submit(get_predict, i, sentence_list) for i in range(test_num//batch_size)]
+# 等待所有的线程完成，才进入后续的执行
+wait(future_tasks, return_when=ALL_COMPLETED)
+
+end_time = time.time()
+print("avg cost time: {}".format((end_time-start_time)/test_num))

@@ -67,6 +67,7 @@ def load_model(input_model_path, input_json_path):
         raise FileNotFoundError(
             'Model file `{}` does not exist.'.format(input_model_path))
     try:
+        # 下面一行已经修改，在改回普通的Keras加载模型时，需要去掉custom_objects
         model = keras.models.load_model(input_model_path, custom_objects=custom_objects)
         return model
     except FileNotFoundError as err:
