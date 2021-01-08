@@ -1,0 +1,7 @@
+keras_bert==0.83.0
+Keras==2.2.4
+seqeval==0.0.10
+keras_contrib==2.0.8
+matplotlib==3.3.1
+numpy==1.16.4
+Flask==1.1.2
