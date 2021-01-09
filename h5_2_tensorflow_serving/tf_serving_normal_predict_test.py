@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-# @Time : 2021/1/8 18:38
+# @Time : 2021/1/9 11:18
 # @Author : Jclian91
-# @File : tf_serving_predict.py
+# @File : tf_serving_normal_predict_test.py
 # @Place : Yangpu, Shanghai
+import time
 import json
 import requests
 import numpy as np
-from pprint import pprint
 from keras_bert import Tokenizer
 
 from util import event_type, MAX_SEQ_LEN
@@ -74,14 +74,23 @@ def bio_to_json(string, tags):
 
 tokenizer = OurTokenizer(token_dict)
 
-# 测试HTTP响应时间
-sentence = "“看得我热泪盈眶，现场太震撼了。” 2021年1月1日，24岁的香港青年阿毛在天安门广场观看了新年第一次升旗仪式。为了实现这个愿望，他骑着山地自行车从广东出发，风雪兼程，于2020年12月31日下午赶到北京。"
-token_ids, segment_is = tokenizer.encode(sentence, max_len=MAX_SEQ_LEN)
-tensor = {"instances": [{"input_1": token_ids, "input_2": segment_is}]}
 
-url = "http://192.168.1.193:8561/v1/models/example_ner:predict"
-req = requests.post(url, json=tensor)
-if req.status_code == 200:
-    t = np.asarray(req.json()['predictions'][0]).argmax(axis=1)
-    tags = [id_label_dict[_] for _ in t]
-    pprint(bio_to_json(sentence, tags[1:-1]))
+# 读取测试样本
+with open("tf_test_sample.txt", "r", encoding="utf-8") as f:
+    content = [_.strip() for _ in f.readlines()]
+
+# 模型预测
+s_time = time.time()
+for i, line in enumerate(content):
+    token_ids, segment_is = tokenizer.encode(line, max_len=MAX_SEQ_LEN)
+    tensor = {"instances": [{"input_1": token_ids, "input_2": segment_is}]}
+
+    url = "http://192.168.1.193:8561/v1/models/example_ner:predict"
+    req = requests.post(url, json=tensor)
+    if req.status_code == 200:
+        t = np.asarray(req.json()['predictions'][0]).argmax(axis=1)
+        tags = [id_label_dict[_] for _ in t]
+        print(i)
+
+e_time = time.time()
+print("avg cost time: {}".format((e_time-s_time)/len(content)))
