@@ -11,7 +11,7 @@ from keras_contrib.layers import CRF
 from keras_contrib.losses import crf_loss
 from keras_contrib.metrics import crf_accuracy
 
-from util import event_type
+from util import event_type, BASE_MODEL_DIR
 from model_train import PreProcessInputData, id_label_dict
 
 
@@ -53,7 +53,7 @@ def bio_to_json(string, tags):
 custom_objects = get_custom_objects()
 for key, value in {'CRF': CRF, 'crf_loss': crf_loss, 'crf_accuracy': crf_accuracy}.items():
     custom_objects[key] = value
-model = load_model("%s_ner.h5" % event_type, custom_objects=custom_objects)
+model = load_model("{}_{}_ner.h5" % (event_type, BASE_MODEL_DIR), custom_objects=custom_objects)
 
 # 测试句子
 text = "经过工作人员两天的反复验证、严密测算，记者昨天从上海中心大厦得到确认：被誉为上海中心大厦“定楼神器”的阻尼器，在8月10日出现自2016年正式启用以来的最大摆幅。"

@@ -14,8 +14,6 @@ def read_data(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
         content = [_.strip() for _ in f.readlines()]
 
-    # 添加原文句子以及该句子的标签
-
     # 读取空行所在的行号
     index = [-1]
     index.extend([i for i, _ in enumerate(content) if ' ' not in _])
@@ -37,7 +35,6 @@ def read_data(file_path):
     sentences = [_ for _ in sentences if _]
     tags = [_ for _ in tags if _]
 
-    # data = [(sent, tag) for sent, tag in zip(sentences, tags)]
     return sentences, tags
 
 
@@ -46,7 +43,6 @@ def read_data(file_path):
 def label2id():
 
     _, train_tags = read_data(train_file_path)
-    # train_tags = [_[1] for _ in train_data]
 
     # 标签转换成id，并保存成文件
     unique_tags = []

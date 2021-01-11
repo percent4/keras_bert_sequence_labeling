@@ -17,7 +17,7 @@ from keras_contrib.losses import crf_loss
 from keras_contrib.metrics import crf_accuracy
 from flask import Flask, request
 
-from util import event_type
+from util import event_type, BASE_MODEL_DIR
 from model_train import PreProcessInputData, id_label_dict
 
 
@@ -93,5 +93,5 @@ if __name__ == '__main__':
     custom_objects = get_custom_objects()
     for key, value in {'CRF': CRF, 'crf_loss': crf_loss, 'crf_accuracy': crf_accuracy}.items():
         custom_objects[key] = value
-    ner_model = load_model("%s_nezha_base_ner.h5" % event_type, custom_objects=custom_objects)
+    ner_model = load_model("{}_{}_ner.h5".format(event_type, BASE_MODEL_DIR), custom_objects=custom_objects)
     app.run(host="0.0.0.0", port=25000)

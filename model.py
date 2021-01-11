@@ -12,7 +12,7 @@ from keras_contrib.layers import CRF
 from keras_contrib.losses import crf_loss
 from keras_contrib.metrics import crf_accuracy
 
-from util import event_type
+from util import event_type, BASE_MODEL_DIR
 
 
 # 创建BERT-BiLSTM-CRF模型
@@ -32,7 +32,7 @@ class BertBilstmCRF:
 
     # 模型
     def create_model(self):
-        model_path = "./chinese_L-12_H-768_A-12/"
+        model_path = "./{}/".format(BASE_MODEL_DIR)
         bert = load_trained_model_from_checkpoint(
             model_path + "bert_config.json",
             model_path + "bert_model.ckpt",

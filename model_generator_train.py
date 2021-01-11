@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+# @Time : 2021/1/11 10:10
+# @Author : Jclian91
+# @File : model_generator_train.py
+# @Place : Yangpu, Shanghai
 import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -73,6 +77,33 @@ def PreProcessOutputData(text):
     return result_tags
 
 
+class DataGenerator:
+    def __init__(self, token_ids, segment_ids, y_labels, batch_size=BATCH_SIZE):
+        self.token_ids = token_ids
+        self.segment_ids = segment_ids
+        self.y_labels = y_labels
+        self.batch_size = batch_size
+        self.steps = len(self.token_ids) // self.batch_size
+        if len(self.token_ids) % self.batch_size != 0:
+            self.steps += 1
+
+    def __len__(self):
+        return self.steps
+
+    def __iter__(self):
+        while True:
+            idxs = list(range(len(self.token_ids)))
+            np.random.shuffle(idxs)
+            X1, X2, Y = [], [], []
+            for i in idxs:
+                X1.append(self.token_ids[i])
+                X2.append(self.segment_ids[i])
+                Y.append(self.y_labels[i])
+                if len(X1) == self.batch_size or i == idxs[-1]:
+                    yield [np.array(X1), np.array(X2)], np.array(Y)
+                    [X1, X2, Y] = [], [], []
+
+
 if __name__ == '__main__':
     # 读取训练集和测试集数据
     input_train, result_train = read_data(train_file_path)
@@ -84,29 +115,32 @@ if __name__ == '__main__':
 
     # 训练集
     input_train_labels, input_train_types = PreProcessInputData(input_train)
-    print(input_train_types[0])
     result_train = PreProcessOutputData(result_train)
     # 测试集
     input_test_labels, input_test_types = PreProcessInputData(input_test)
     result_test = PreProcessOutputData(result_test)
     early_stopping = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=3, verbose=1, mode='auto')
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss', min_delta=0.0004, patience=2, factor=0.1, min_lr=1e-6,
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', min_delta=0.0004, patience=3, factor=0.1, min_lr=1e-6,
                                   mode='auto',
                                   verbose=1)
-    model = BertBilstmCRF(max_seq_length=MAX_SEQ_LEN, lstm_dim=64).create_model()
+    model = BertBilstmCRF(max_seq_length=MAX_SEQ_LEN, lstm_dim=100).create_model()
 
-    history = model.fit(x=[input_train_labels, input_train_types],
-                        y=result_train,
-                        batch_size=BATCH_SIZE,
+    train_D = DataGenerator(input_train_labels, input_train_types, result_train)
+    test_D = DataGenerator(input_test_labels, input_test_types, result_test)
+
+    history = model.fit_generator(
+                        train_D.__iter__(),
+                        steps_per_epoch=len(train_D),
                         epochs=EPOCH,
-                        validation_data=[[input_test_labels, input_test_types], result_test],
+                        validation_data=test_D.__iter__(),
+                        validation_steps=len(test_D),
                         verbose=1,
-                        callbacks=[early_stopping, reduce_lr],
-                        shuffle=True
+                        shuffle=True,
+                        callbacks=[early_stopping, reduce_lr]
                         )
 
     # 保存模型
-    model.save("{}_{}_ner.h5".format(event_type, BASE_MODEL_DIR))
+    model.save("{}_{}_ner.h5".format(BASE_MODEL_DIR, event_type))
 
     # 绘制loss和acc图像
     plt.subplot(2, 1, 1)
