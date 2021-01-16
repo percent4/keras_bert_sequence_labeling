@@ -10,10 +10,9 @@ import numpy as np
 from keras_bert import Tokenizer
 from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED
 
-from util import event_type, MAX_SEQ_LEN
 
 # 读取label2id字典
-with open("../{}_label2id.json".format(event_type), "r", encoding="utf-8") as h:
+with open("../example_label2id.json", "r", encoding="utf-8") as h:
     label_id_dict = json.loads(h.read())
 
 id_label_dict = {v: k for k, v in label_id_dict.items()}
@@ -84,7 +83,7 @@ start_time = time.time()
 
 # 测试HTTP响应时间
 def get_predict(i, sentence):
-    token_ids, segment_is = tokenizer.encode(sentence, max_len=MAX_SEQ_LEN)
+    token_ids, segment_is = tokenizer.encode(sentence, max_len=128)
     tensor = {"instances": [{"input_1": token_ids, "input_2": segment_is}]}
 
     url = "http://192.168.1.193:8561/v1/models/example_ner:predict"

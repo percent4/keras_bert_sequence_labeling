@@ -103,12 +103,15 @@ def get_predict(i, sentence_list):
             predict_result.append(bio_to_json(sentence_list[j], tags[1:-1]))
 
 
-# 批量调用测试
-for i in range(len(content)//batch_size):
-    get_predict(i, content[batch_size*i:batch_size*(i+1)])
+# 利用多线程调用接口
+executor = ThreadPoolExecutor(max_workers=10)  # 可以自己调整max_workers,即线程的个数
+# submit()的参数： 第一个为函数， 之后为该函数的传入参数，允许有多个
+future_tasks = [executor.submit(get_predict, i, content[batch_size*i:batch_size*(i+1)]) for i in range(len(content)//batch_size)]
+# 等待所有的线程完成，才进入后续的执行
+wait(future_tasks, return_when=ALL_COMPLETED)
 
 end_time = time.time()
 print("avg cost time: {}".format((end_time-start_time)/len(content)))
 
-with open("batch_predict.json", "w", encoding="utf-8") as g:
+with open("batch_multi_thread_predict.json", "w", encoding="utf-8") as g:
     g.write(json.dumps(predict_result, ensure_ascii=False, indent=2))

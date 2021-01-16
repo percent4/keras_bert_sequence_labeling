@@ -9,10 +9,9 @@ import numpy as np
 from pprint import pprint
 from keras_bert import Tokenizer
 
-from util import event_type, MAX_SEQ_LEN
 
 # 读取label2id字典
-with open("../{}_label2id.json".format(event_type), "r", encoding="utf-8") as h:
+with open("../example_label2id.json", "r", encoding="utf-8") as h:
     label_id_dict = json.loads(h.read())
 
 id_label_dict = {v: k for k, v in label_id_dict.items()}
@@ -75,8 +74,8 @@ def bio_to_json(string, tags):
 tokenizer = OurTokenizer(token_dict)
 
 # 测试HTTP响应时间
-sentence = "“看得我热泪盈眶，现场太震撼了。” 2021年1月1日，24岁的香港青年阿毛在天安门广场观看了新年第一次升旗仪式。为了实现这个愿望，他骑着山地自行车从广东出发，风雪兼程，于2020年12月31日下午赶到北京。"
-token_ids, segment_is = tokenizer.encode(sentence, max_len=MAX_SEQ_LEN)
+sentence = "井上雄彦的《灌篮高手》是一部作品，也是他自己的修行之路。"
+token_ids, segment_is = tokenizer.encode(sentence, max_len=128)
 tensor = {"instances": [{"input_1": token_ids, "input_2": segment_is}]}
 
 url = "http://192.168.1.193:8561/v1/models/example_ner:predict"
