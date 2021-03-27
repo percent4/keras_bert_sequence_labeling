@@ -6,11 +6,9 @@
 import json
 from keras.layers import *
 from keras.models import *
-from keras.optimizers import *
 from keras_bert import load_trained_model_from_checkpoint
 from keras_contrib.layers import CRF
-from keras_contrib.losses import crf_loss
-from keras_contrib.metrics import crf_accuracy
+
 
 from util import event_type, BASE_MODEL_DIR
 
@@ -51,9 +49,4 @@ class BertBilstmCRF:
         crf_out = CRF(len(self.label), sparse_target=True)(lstm_out)
         model = Model([x1, x2], crf_out)
         model.summary()
-        model.compile(
-            optimizer=Adam(1e-4),
-            loss=crf_loss,
-            metrics=[crf_accuracy]
-        )
         return model

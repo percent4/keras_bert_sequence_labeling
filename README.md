@@ -224,6 +224,32 @@ organization     0.7207    0.7878    0.7528       344
 
 结论：模型预测速度并没有显著提升。
 
+### Warmup学习率调整策略测试结果
+
+#### example数据集(micro avg f1-score)
+
+模型参数: MAX_SEQ_LEN=128, BATCH_SIZE=32, EPOCH=10
+
+|学习率调整|预测1|预测2|预测3|avg|
+|---|---|---|---|---|
+|Warmup|0.9276|0.9217|0.9252|0.9248|
+
+#### time数据集(micro avg f1-score)
+
+模型参数: MAX_SEQ_LEN=128, BATCH_SIZE=32, EPOCH=10
+
+|学习率调整|预测1|预测2|预测3|avg|
+|---|---|---|---|---|
+|Warmup|0.8926|0.8934|0.8820|0.8893|
+
+#### cluener数据集(micro avg f1-score)
+
+模型参数: MAX_SEQ_LEN=128, BATCH_SIZE=32, EPOCH=10
+
+|学习率调整|预测1|预测2|预测3|avg|
+|---|---|---|---|---|
+|Warmup|0.7612|0.7629|0.7607|0.7616|
+
 ### 代码说明
 
 0. 将BERT中文预训练模型chinese_L-12_H-768_A-12放在chinese_L-12_H-768_A-12文件夹下

@@ -6,6 +6,10 @@ from keras.preprocessing.sequence import pad_sequences
 from keras.callbacks import EarlyStopping
 from keras.callbacks import ReduceLROnPlateau
 from keras_bert import Tokenizer
+from keras.optimizers import Adam
+from keras_contrib.losses import crf_loss
+from keras_contrib.metrics import crf_accuracy
+from keras_bert import AdamWarmup, calc_train_steps
 
 from util import event_type, BASE_MODEL_DIR
 from util import MAX_SEQ_LEN, BATCH_SIZE, EPOCH, train_file_path, test_file_path
@@ -89,11 +93,24 @@ if __name__ == '__main__':
     # 测试集
     input_test_labels, input_test_types = PreProcessInputData(input_test)
     result_test = PreProcessOutputData(result_test)
-    early_stopping = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=3, verbose=1, mode='auto')
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss', min_delta=0.0004, patience=2, factor=0.1, min_lr=1e-6,
-                                  mode='auto',
-                                  verbose=1)
+    # early_stopping = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=3, verbose=1, mode='auto')
+    # reduce_lr = ReduceLROnPlateau(monitor='val_loss', min_delta=0.0004, patience=3, factor=0.1, min_lr=1e-7,
+    #                               mode='auto',
+    #                               verbose=1)
+    # add warmup
+    total_steps, warmup_steps = calc_train_steps(
+        num_example=len(input_train),
+        batch_size=BATCH_SIZE,
+        epochs=EPOCH,
+        warmup_proportion=0.2,
+    )
+    optimizer = AdamWarmup(total_steps, warmup_steps, lr=1e-4, min_lr=1e-7)
     model = BertBilstmCRF(max_seq_length=MAX_SEQ_LEN, lstm_dim=64).create_model()
+    model.compile(
+        optimizer=optimizer,
+        loss=crf_loss,
+        metrics=[crf_accuracy]
+    )
 
     history = model.fit(x=[input_train_labels, input_train_types],
                         y=result_train,
@@ -101,7 +118,7 @@ if __name__ == '__main__':
                         epochs=EPOCH,
                         validation_data=[[input_test_labels, input_test_types], result_test],
                         verbose=1,
-                        callbacks=[early_stopping, reduce_lr],
+                        #
                         shuffle=True
                         )
 
