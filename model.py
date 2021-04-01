@@ -5,10 +5,9 @@
 # @Place : Yangpu, Shanghai
 import json
 from keras.layers import *
-from keras.models import *
-from keras_bert import load_trained_model_from_checkpoint
+from keras.models import Model
+from keras_bert import load_trained_model_from_checkpoint, build_model_from_config, load_model_weights_from_checkpoint
 from keras_contrib.layers import CRF
-
 
 from util import event_type, BASE_MODEL_DIR
 
@@ -39,14 +38,14 @@ class BertBilstmCRF:
         # make bert layer trainable
         for layer in bert.layers:
             layer.trainable = True
-        x1 = Input(shape=(None,))
-        x2 = Input(shape=(None,))
-        bert_out = bert([x1, x2])
+        # x1 = Input(shape=(None,))
+        # x2 = Input(shape=(None,))
+        # bert_out = bert([x1, x2])
         lstm_out = Bidirectional(LSTM(self.lstmDim,
                                       return_sequences=True,
                                       dropout=0.2,
-                                      recurrent_dropout=0.2))(bert_out)
+                                      recurrent_dropout=0.2))(bert.output)
         crf_out = CRF(len(self.label), sparse_target=True)(lstm_out)
-        model = Model([x1, x2], crf_out)
+        model = Model(bert.input, crf_out)
         model.summary()
         return model
